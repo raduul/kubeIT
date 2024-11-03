@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubeit-deployment
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kubeit
+  template:
+    metadata:
+      labels:
+        app: kubeit
+    spec:
+      containers:
+      - name: kubeit
+        image: kubeit:2.0.1
+        imagePullPolicy: IfNotPresent
