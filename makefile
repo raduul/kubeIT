@@ -1,2 +1,5 @@
 test:
-go 
+	go test -count=80 ./...
+
+test log:
+	go test -v ./...

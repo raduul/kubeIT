@@ -7,3 +7,5 @@ RUN go build -o kubeit ./server/main.go && ls -l /app
 
 FROM builder as runner
 CMD ["./kubeit"]
+
+## TODO: Remove SOURCE files after build complete....
