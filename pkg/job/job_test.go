@@ -127,5 +127,46 @@ func TestCreateJobWithCorrectArgsForwardsError(t *testing.T) {
 	assert.EqualError(t, err, expectedErrorMessage)
 	mockJobService.AssertCalled(t, "CreateJob", jobDetails, clientset)
 
-	t.Logf("ExpectedErrorMessage: %s, ReturnedErrorMessage: %s", expectedErrorMessage, err.Error())
+	//t.Logf("ExpectedErrorMessage: %s, ReturnedErrorMessage: %s", expectedErrorMessage, err.Error())
+}
+
+func TestDeleteJobIsCalled(t *testing.T) {
+	deleteJobDetails := DeleteJobDetails{
+		JobName:   gofakeit.DigitN(10),
+		NameSpace: gofakeit.DigitN(10),
+	}
+	clientset := fake.NewSimpleClientset()
+	mockJobService := new(MockJobService)
+
+	expectedResult := true
+
+	mockJobService.On("DeleteJob", deleteJobDetails, clientset).Return(true, nil)
+	response, err := mockJobService.DeleteJob(deleteJobDetails, clientset)
+
+	// Assertions
+	assert.NoError(t, err)
+	assert.Equal(t, expectedResult, response)
+	mockJobService.AssertCalled(t, "DeleteJob", deleteJobDetails, clientset)
+
+	//t.Logf("Mocked Created Job Name: %s", result.Name)
+}
+
+func TestDeleteJobIsForwardingError(t *testing.T) {
+	deleteJobDetails := DeleteJobDetails{
+		JobName:   gofakeit.DigitN(10),
+		NameSpace: gofakeit.DigitN(10),
+	}
+	clientset := fake.NewSimpleClientset()
+	mockJobService := new(MockJobService)
+
+	expectedErrorMessage := gofakeit.Sentence(5)
+
+	mockJobService.On("DeleteJob", deleteJobDetails, clientset).Return(true, errors.New(expectedErrorMessage))
+	_, err := mockJobService.DeleteJob(deleteJobDetails, clientset)
+
+	// Assertions
+	assert.EqualError(t, err, errors.New(expectedErrorMessage).Error())
+	mockJobService.AssertCalled(t, "DeleteJob", deleteJobDetails, clientset)
+
+	//t.Logf("Mocked Created Job Name: %s", result.Name)
 }

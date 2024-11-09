@@ -7,5 +7,5 @@ import (
 
 type JobService interface {
 	CreateJob(jobData CreateJobDetails, clientset kubernetes.Interface) (*batchv1.Job, error)
-	DeleteJob(jobName DeleteJobDetails, clientset kubernetes.Interface) (bool, error) // TODO: Add DeleteJob method
+	DeleteJob(jobName DeleteJobDetails, clientset kubernetes.Interface) (bool, error)
 }

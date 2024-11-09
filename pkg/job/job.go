@@ -48,13 +48,24 @@ func CreateJob(jobData CreateJobDetails, clientset kubernetes.Interface) (*batch
 		},
 	}
 
-	result, err := jobsClient.Create(context.TODO(), job, metav1.CreateOptions{})
+	response, err := jobsClient.Create(context.TODO(), job, metav1.CreateOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("error creating job: %w", err)
 	}
-	if result == nil {
+	if response == nil {
 		return nil, errors.New("error creating job")
 	}
-	fmt.Printf("Created job %q.\n", result.GetObjectMeta().GetName())
-	return result, nil
+	fmt.Printf("Created job %q.\n", response.GetObjectMeta().GetName())
+	return response, nil
+}
+
+func DeleteJob(jobName DeleteJobDetails, clientset kubernetes.Interface) (bool, error) {
+	jobsClient := clientset.BatchV1().Jobs(jobName.NameSpace)
+
+	err := jobsClient.Delete(context.TODO(), jobName.JobName, metav1.DeleteOptions{})
+	if err != nil {
+		return false, fmt.Errorf("error deleting job: %w", err)
+	}
+	fmt.Printf("Deleted job %q.\n", jobName.JobName)
+	return true, nil
 }

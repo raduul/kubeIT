@@ -14,3 +14,8 @@ func (m *MockJobService) CreateJob(job CreateJobDetails, clientset kubernetes.In
 	args := m.Called(job, clientset)
 	return args.Get(0).(*batchv1.Job), args.Error(1)
 }
+
+func (m *MockJobService) DeleteJob(jobName DeleteJobDetails, clientset kubernetes.Interface) (bool, error) {
+	args := m.Called(jobName, clientset)
+	return args.Bool(0), args.Error(1)
+}
