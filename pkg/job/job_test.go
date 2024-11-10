@@ -1,172 +1,92 @@
-package job
+package job_test
 
 import (
-	"errors"
+	"context"
 	"testing"
 
 	gofakeit "github.com/brianvoe/gofakeit/v7"
+	"github.com/raduul/kubeIT/pkg/job"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	batchv1 "k8s.io/api/batch/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
 func TestCreateJob(t *testing.T) {
-	jobDetails := CreateJobDetails{
+
+	jobDetails := job.CreateJobDetails{
 		JobName:       gofakeit.DigitN(10),
 		ContainerName: gofakeit.DigitN(10),
 		NameSpace:     gofakeit.DigitN(10),
 		Image:         "busybox",
 		Command:       []string{"echo", "hello there test user"},
 	}
+
 	clientset := fake.NewSimpleClientset()
-	mockJobService := new(MockJobService)
 
-	expectedResult := &batchv1.Job{}
+	result, err := job.CreateJob(context.TODO(), jobDetails, clientset)
 
-	mockJobService.On("CreateJob", mock.Anything, mock.Anything).Return(expectedResult, nil)
-	result, err := mockJobService.CreateJob(jobDetails, clientset)
-
-	// Assertions
-	assert.NoError(t, err)
-	assert.Equal(t, expectedResult, result)
-	mockJobService.AssertCalled(t, "CreateJob", jobDetails, clientset)
-
-	//t.Logf("Mocked Created Job Name: %s", result.Name)
-}
-
-func TestCreateJobWithCorrectArgsReturnsNotNil(t *testing.T) {
-	jobDetails := CreateJobDetails{
-		JobName:       gofakeit.DigitN(1),
-		ContainerName: gofakeit.Sentence(1),
-		NameSpace:     gofakeit.DigitN(10),
-		Image:         gofakeit.Sentence(1),
-		Command:       []string{"echo", "hello there test user"},
-	}
-	clientset := fake.NewSimpleClientset()
-	mockJobService := new(MockJobService)
-
-	expectedResult := &batchv1.Job{}
-
-	mockJobService.On("CreateJob", jobDetails, clientset).Return(expectedResult, nil)
-	result, err := mockJobService.CreateJob(jobDetails, clientset)
-
-	// Assertions
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
-	mockJobService.AssertCalled(t, "CreateJob", jobDetails, clientset)
 
-	//t.Logf("Mock Created with the following fake Job Name: %s", result.Name)
-}
-
-func TestCreateJobWithCorrectArgsReturnsCorrectName(t *testing.T) {
-	jobDetails := CreateJobDetails{
-		JobName:       gofakeit.DigitN(10),
-		ContainerName: gofakeit.DigitN(10),
-		NameSpace:     gofakeit.DigitN(10),
-		Image:         "busybox",
-		Command:       []string{"echo", "hello there test user"},
-	}
-	clientset := fake.NewSimpleClientset()
-	mockJobService := new(MockJobService)
-
-	expectedResult := &batchv1.Job{}
-
-	mockJobService.On("CreateJob", jobDetails, clientset).Return(expectedResult, nil)
-	result, err := mockJobService.CreateJob(jobDetails, clientset)
-
-	// Assertions
+	createdJob, err := clientset.BatchV1().Jobs(jobDetails.NameSpace).Get(context.TODO(), jobDetails.JobName, metav1.GetOptions{})
 	assert.NoError(t, err)
-	assert.Equal(t, expectedResult.Name, result.Name)
-	mockJobService.AssertCalled(t, "CreateJob", jobDetails, clientset)
+	assert.NotNil(t, createdJob)
 
-	//t.Logf("Mock Created with the following fake Job Name: %s", result.Name)
+	assert.Equal(t, jobDetails.JobName, createdJob.Name)
+	assert.Equal(t, jobDetails.NameSpace, createdJob.Namespace)
+
+	container := createdJob.Spec.Template.Spec.Containers[0]
+	assert.Equal(t, jobDetails.ContainerName, container.Name)
+	assert.Equal(t, jobDetails.Image, container.Image)
+	assert.Equal(t, jobDetails.Command, container.Command)
 }
 
-func TestCreateJobWithCorrectArgsReturnsCorrectNamespace(t *testing.T) {
-	jobDetails := CreateJobDetails{
-		JobName:       gofakeit.DigitN(10),
-		ContainerName: gofakeit.DigitN(10),
-		NameSpace:     gofakeit.DigitN(10),
-		Image:         "busybox",
-		Command:       []string{"echo", "hello there test user"},
+func TestDeleteJob_Success(t *testing.T) {
+
+	jobName := "test-job"
+	namespace := "default"
+	deleteJobDetails := job.DeleteJobDetails{
+		JobName:   jobName,
+		NameSpace: namespace,
 	}
+
 	clientset := fake.NewSimpleClientset()
-	mockJobService := new(MockJobService)
 
-	expectedResult := &batchv1.Job{}
-
-	mockJobService.On("CreateJob", jobDetails, clientset).Return(expectedResult, nil)
-	result, err := mockJobService.CreateJob(jobDetails, clientset)
-
-	// Assertions
+	// Create a job to be deleted
+	_, err := clientset.BatchV1().Jobs(namespace).Create(context.TODO(), &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: jobName,
+		},
+	}, metav1.CreateOptions{})
 	assert.NoError(t, err)
-	assert.Equal(t, expectedResult.Namespace, result.Namespace)
-	mockJobService.AssertCalled(t, "CreateJob", jobDetails, clientset)
 
-	//t.Logf("Mock Created with the following fake Job Name: %s", result.Name)
+	result, err := job.DeleteJob(deleteJobDetails, clientset)
+
+	assert.NoError(t, err)
+	assert.True(t, result)
+
+	// Verify that the job no longer exists
+	_, err = clientset.BatchV1().Jobs(namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
+	assert.Error(t, err)
+
 }
 
-func TestCreateJobWithCorrectArgsForwardsError(t *testing.T) {
-	jobDetails := CreateJobDetails{
-		JobName:       gofakeit.DigitN(10),
-		ContainerName: gofakeit.DigitN(10),
-		NameSpace:     gofakeit.DigitN(10),
-		Image:         "busybox",
-		Command:       []string{"echo", "hello there test user"},
+func TestDeleteJob_ForwardsError(t *testing.T) {
+
+	jobName := "test-job"
+	namespace := "default"
+	deleteJobDetails := job.DeleteJobDetails{
+		JobName:   jobName,
+		NameSpace: namespace,
 	}
+
 	clientset := fake.NewSimpleClientset()
-	mockJobService := new(MockJobService)
 
-	expectedErrorMessage := gofakeit.Sentence(5)
+	expectedErrorMessage := "error deleting job: jobs.batch \"test-job\" not found"
 
-	mockJobService.On("CreateJob", jobDetails, clientset).Return((*batchv1.Job)(nil), errors.New(expectedErrorMessage))
-	_, err := mockJobService.CreateJob(jobDetails, clientset)
+	_, err := job.DeleteJob(deleteJobDetails, clientset)
 
-	// Assertions
 	assert.EqualError(t, err, expectedErrorMessage)
-	mockJobService.AssertCalled(t, "CreateJob", jobDetails, clientset)
 
-	//t.Logf("ExpectedErrorMessage: %s, ReturnedErrorMessage: %s", expectedErrorMessage, err.Error())
-}
-
-func TestDeleteJobIsCalled(t *testing.T) {
-	deleteJobDetails := DeleteJobDetails{
-		JobName:   gofakeit.DigitN(10),
-		NameSpace: gofakeit.DigitN(10),
-	}
-	clientset := fake.NewSimpleClientset()
-	mockJobService := new(MockJobService)
-
-	expectedResult := true
-
-	mockJobService.On("DeleteJob", deleteJobDetails, clientset).Return(true, nil)
-	response, err := mockJobService.DeleteJob(deleteJobDetails, clientset)
-
-	// Assertions
-	assert.NoError(t, err)
-	assert.Equal(t, expectedResult, response)
-	mockJobService.AssertCalled(t, "DeleteJob", deleteJobDetails, clientset)
-
-	//t.Logf("Mocked Created Job Name: %s", result.Name)
-}
-
-func TestDeleteJobIsForwardingError(t *testing.T) {
-	deleteJobDetails := DeleteJobDetails{
-		JobName:   gofakeit.DigitN(10),
-		NameSpace: gofakeit.DigitN(10),
-	}
-	clientset := fake.NewSimpleClientset()
-	mockJobService := new(MockJobService)
-
-	expectedErrorMessage := gofakeit.Sentence(5)
-
-	mockJobService.On("DeleteJob", deleteJobDetails, clientset).Return(true, errors.New(expectedErrorMessage))
-	_, err := mockJobService.DeleteJob(deleteJobDetails, clientset)
-
-	// Assertions
-	assert.EqualError(t, err, errors.New(expectedErrorMessage).Error())
-	mockJobService.AssertCalled(t, "DeleteJob", deleteJobDetails, clientset)
-
-	//t.Logf("Mocked Created Job Name: %s", result.Name)
 }

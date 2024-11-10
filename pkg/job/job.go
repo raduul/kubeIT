@@ -12,12 +12,12 @@ import (
 )
 
 type CreateJobDetails struct {
-	JobName       string
-	ContainerName string
-	NameSpace     string
-	labels        map[string]string
-	Image         string
-	Command       []string
+	JobName       string            `json:"jobName"`
+	ContainerName string            `json:"containerName"`
+	NameSpace     string            `json:"namespace"`
+	Labels        map[string]string `json:"labels"`
+	Image         string            `json:"image"`
+	Command       []string          `json:"command"`
 }
 
 type DeleteJobDetails struct {
@@ -25,12 +25,13 @@ type DeleteJobDetails struct {
 	NameSpace string
 }
 
-func CreateJob(jobData CreateJobDetails, clientset kubernetes.Interface) (*batchv1.Job, error) {
+func CreateJob(ctx context.Context, jobData CreateJobDetails, clientset kubernetes.Interface) (*batchv1.Job, error) {
 	jobsClient := clientset.BatchV1().Jobs(jobData.NameSpace)
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: jobData.JobName,
+			Name:   jobData.JobName,
+			Labels: jobData.Labels,
 		},
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
@@ -48,7 +49,7 @@ func CreateJob(jobData CreateJobDetails, clientset kubernetes.Interface) (*batch
 		},
 	}
 
-	response, err := jobsClient.Create(context.TODO(), job, metav1.CreateOptions{})
+	response, err := jobsClient.Create(ctx, job, metav1.CreateOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("error creating job: %w", err)
 	}

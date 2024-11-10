@@ -1,8 +1,13 @@
 package main
 
 import (
+	"net/http"
+
+	"fmt"
+	"log"
+
 	"github.com/raduul/kubeIT/pkg/client"
-	"github.com/raduul/kubeIT/pkg/job"
+	handler "github.com/raduul/kubeIT/pkg/handlers"
 )
 
 func main() {
@@ -11,19 +16,12 @@ func main() {
 		panic(err)
 	}
 
-	// jobDetails := job.CreateJobDetails{
-	// 	JobName:       "job1",
-	// 	ContainerName: "container1",
-	// 	NameSpace:     "default",
-	// 	Image:         "busybox",
-	// 	Command:       []string{"echo", "hello there test user"},
-	// }
-	//job.CreateJob(jobDetails, clientConfig)
+	http.HandleFunc("/createJob", func(w http.ResponseWriter, r *http.Request) {
+		handler.CreateJobHandler(w, r, clientConfig)
+	})
 
-	deleteJobDetails := job.DeleteJobDetails{
-		JobName:   "job1",
-		NameSpace: "default",
+	fmt.Println("Starting server on :7080")
+	if err := http.ListenAndServe(":7080", nil); err != nil {
+		log.Fatalf("Server failed to start: %v", err)
 	}
-	job.DeleteJob(deleteJobDetails, clientConfig)
-
 }
