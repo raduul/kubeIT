@@ -7,7 +7,7 @@ import (
 	"log"
 
 	"github.com/raduul/kubeIT/pkg/client"
-	handler "github.com/raduul/kubeIT/pkg/handlers"
+	"github.com/raduul/kubeIT/pkg/handlers"
 )
 
 func main() {
@@ -17,11 +17,17 @@ func main() {
 	}
 
 	http.HandleFunc("/createJob", func(w http.ResponseWriter, r *http.Request) {
-		handler.CreateJobHandler(w, r, clientConfig)
+		handlers.CreateJobHandler(w, r, clientConfig)
+	})
+
+	http.HandleFunc("/createDeployment", func(w http.ResponseWriter, r *http.Request) {
+		handlers.CreateDeploymentHandler(w, r, clientConfig)
+	})
+
+	http.HandleFunc("/createService", func(w http.ResponseWriter, r *http.Request) {
+		handlers.CreateServiceHandler(w, r, clientConfig)
 	})
 
 	fmt.Println("Starting server on :7080")
-	if err := http.ListenAndServe(":7080", nil); err != nil {
-		log.Fatalf("Server failed to start: %v", err)
-	}
+	log.Fatal(http.ListenAndServe(":7080", nil))
 }
