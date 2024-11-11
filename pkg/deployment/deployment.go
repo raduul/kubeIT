@@ -19,7 +19,26 @@ type CreateDeploymentDetails struct {
 	ContainerPort  int32             `json:"containerPort"`
 }
 
+func validateDeploymentDetails(deploymentData CreateDeploymentDetails) error {
+	if deploymentData.DeploymentName == "" {
+		return fmt.Errorf("error DeploymentName is empty")
+	}
+	if deploymentData.Namespace == "" {
+		return fmt.Errorf("error Namespace is empty")
+	}
+	if deploymentData.Image == "" {
+		return fmt.Errorf("error Image is empty")
+	}
+	return nil
+}
+
 func CreateDeployment(ctx context.Context, deploymentData CreateDeploymentDetails, clientset kubernetes.Interface) (*appsv1.Deployment, error) {
+
+	err := validateDeploymentDetails(deploymentData)
+	if err != nil {
+		return nil, err
+	}
+
 	deploymentsClient := clientset.AppsV1().Deployments(deploymentData.Namespace)
 
 	deployment := &appsv1.Deployment{
@@ -57,7 +76,6 @@ func CreateDeployment(ctx context.Context, deploymentData CreateDeploymentDetail
 	if err != nil {
 		return nil, fmt.Errorf("failed to create deployment: %w", err)
 	}
-
 	fmt.Printf("Created deployment %q.\n", result.GetObjectMeta().GetName())
 	return result, nil
 }
