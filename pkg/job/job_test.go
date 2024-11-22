@@ -2,6 +2,7 @@ package job_test
 
 import (
 	"context"
+	"log"
 	"testing"
 
 	gofakeit "github.com/brianvoe/gofakeit/v7"
@@ -40,6 +41,7 @@ func TestCreateJob(t *testing.T) {
 	assert.Equal(t, jobDetails.ContainerName, container.Name)
 	assert.Equal(t, jobDetails.Image, container.Image)
 	assert.Equal(t, jobDetails.Command, container.Command)
+	job.AutoRemoveSucceededJobs(clientset)
 }
 
 func TestDeleteJob_Success(t *testing.T) {
@@ -53,10 +55,10 @@ func TestDeleteJob_Success(t *testing.T) {
 
 	clientset := fake.NewSimpleClientset()
 
-	// Create a job to be deleted
 	_, err := clientset.BatchV1().Jobs(namespace).Create(context.TODO(), &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: jobName,
+			Name:      jobName,
+			Namespace: namespace,
 		},
 	}, metav1.CreateOptions{})
 	assert.NoError(t, err)
@@ -66,10 +68,9 @@ func TestDeleteJob_Success(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, result)
 
-	// Verify that the job no longer exists
 	_, err = clientset.BatchV1().Jobs(namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
 	assert.Error(t, err)
-
+	job.AutoRemoveSucceededJobs(clientset)
 }
 
 func TestDeleteJob_ForwardsError(t *testing.T) {
@@ -89,4 +90,35 @@ func TestDeleteJob_ForwardsError(t *testing.T) {
 
 	assert.EqualError(t, err, expectedErrorMessage)
 
+}
+
+func TestAutoDeleteJob_JobIsDeletedThrowsNoError(t *testing.T) {
+	jobDetails := job.CreateJobDetails{
+		JobName:       gofakeit.DigitN(10),
+		ContainerName: gofakeit.DigitN(10),
+		NameSpace:     gofakeit.DigitN(10),
+		Image:         "busybox",
+		Command:       []string{"echo", "hello there test user"},
+	}
+
+	clientset := fake.NewSimpleClientset()
+
+	nowCreatedJob, err := job.CreateJob(context.TODO(), jobDetails, clientset)
+	log.Println("NOW CREATED---------", nowCreatedJob)
+	assert.NoError(t, err)
+
+	createdJob, err := clientset.BatchV1().Jobs(jobDetails.NameSpace).Get(context.TODO(), jobDetails.JobName, metav1.GetOptions{})
+	assert.NoError(t, err)
+	//fake.NewSimpleClientset() has limitations and doesn't change status of created job, so we need to do it manually
+	createdJob.Status.Succeeded = 1
+
+	_, err = clientset.BatchV1().Jobs(jobDetails.NameSpace).Update(context.TODO(), createdJob, metav1.UpdateOptions{})
+	assert.NoError(t, err)
+
+	err = job.AutoRemoveSucceededJobs(clientset)
+	assert.NoError(t, err)
+
+	_, err = clientset.BatchV1().Jobs(jobDetails.NameSpace).Get(context.TODO(), jobDetails.JobName, metav1.GetOptions{})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "not found")
 }

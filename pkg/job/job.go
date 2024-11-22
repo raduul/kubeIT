@@ -56,7 +56,7 @@ func CreateJob(ctx context.Context, jobData CreateJobDetails, clientset kubernet
 	if response == nil {
 		return nil, errors.New("error creating job")
 	}
-	fmt.Printf("Created job %q.\n", response.GetObjectMeta().GetName())
+	fmt.Printf("Created job %q.\n", response.Name)
 	return response, nil
 }
 
@@ -69,4 +69,22 @@ func DeleteJob(jobName DeleteJobDetails, clientset kubernetes.Interface) (bool, 
 	}
 	fmt.Printf("Deleted job %q.\n", jobName.JobName)
 	return true, nil
+}
+
+func AutoRemoveSucceededJobs(clientset kubernetes.Interface) error {
+	list, err := clientset.BatchV1().Jobs(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return fmt.Errorf("error listing jobs: %w", err)
+	}
+
+	for _, job := range list.Items {
+		if job.Status.Succeeded > 0 {
+			err := clientset.BatchV1().Jobs(job.Namespace).Delete(context.TODO(), job.Name, metav1.DeleteOptions{})
+			if err != nil {
+				return fmt.Errorf("error deleting job: %s in namespace %s: %w", job.Name, job.Namespace, err)
+			}
+			fmt.Printf("Deleted following job: %q in namespace: %q.\n", job.Name, job.Namespace)
+		}
+	}
+	return nil
 }

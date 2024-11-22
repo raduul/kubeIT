@@ -8,4 +8,5 @@ import (
 type JobService interface {
 	CreateJob(jobData CreateJobDetails, clientset kubernetes.Interface) (*batchv1.Job, error)
 	DeleteJob(jobName DeleteJobDetails, clientset kubernetes.Interface) (bool, error)
+	AutoRemoveJobs(namespace string, clientset kubernetes.Interface) error
 }
