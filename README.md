@@ -2,6 +2,8 @@
 
 kubeIT is a Kubernetes management tool designed to simplify the deployment, scaling, and management of containerized applications through REST API calls.
 
+The kubeIT approach allows multiple microservices to internally spin up additional resources, for example if an additional jupyter kernel is needed to run python notebooks, this can be invoked directly through here. Moreover, same can be applied to jobs, if there is a need to run a data transformation, it can be executed as a docker container inside of a job, and using a storage class you can specify where the data should be ingested and transformed.
+
 ## Features
 
 - Easy creation of deployments
