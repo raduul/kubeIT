@@ -79,7 +79,13 @@ func AutoRemoveSucceededJobs(clientset kubernetes.Interface) error {
 
 	for _, job := range list.Items {
 		if job.Status.Succeeded > 0 {
-			err := clientset.BatchV1().Jobs(job.Namespace).Delete(context.TODO(), job.Name, metav1.DeleteOptions{})
+			deletePolicy := metav1.DeletePropagationForeground
+			err := clientset.BatchV1().Jobs(job.Namespace).Delete(context.TODO(),
+				job.Name,
+				metav1.DeleteOptions{
+					PropagationPolicy: &deletePolicy,
+				})
+
 			if err != nil {
 				return fmt.Errorf("error deleting job: %s in namespace %s: %w", job.Name, job.Namespace, err)
 			}

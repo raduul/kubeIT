@@ -1,8 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
-  name: job-creator
-  namespace: default  # Should be configured to the namespace where kubeIT is being deployed
+  name: job-manager
 rules:
   - apiGroups: ["batch"]
     resources: ["jobs"]
@@ -13,4 +12,3 @@ rules:
   - apiGroups: [""]
     resources: ["services"]
     verbs: ["create", "get", "list", "watch", "delete"]
-
