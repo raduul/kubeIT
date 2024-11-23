@@ -15,5 +15,4 @@ spec:
     spec:
       containers:
       - name: kubeit
-        image: kubeit:2.0.13
-        imagePullPolicy: Never
+        image: raduul/kubeit:0.0.1

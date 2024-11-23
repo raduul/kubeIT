@@ -17,18 +17,22 @@ To install kubeIT, follow these steps:
     ```sh
     git clone https://github.com/yourusername/kubeIT.git
     ```
+
 2. Navigate to the project directory:
     ```sh
     cd kubeIT
     ```
+
 3. Create an image:
     ```sh
     docker build -t kubeit:2.0.13 .
     ```
+
 4. Deploy on kubernetes:
     ```sh
     kubectl apply -f kubernetes/
     ```
+
 5. Deploy jobs/deployments on kubernetes:
     ```sh
     curl -X POST http://localhost:7080/createJob \
@@ -41,12 +45,21 @@ To install kubeIT, follow these steps:
         "command": ["echo", "Hello World"]
     }'
     ```
+
     ```sh
     curl -v -X POST http://localhost:7080/createDeployment \
     -H "Content-Type: application/json" \
     -d "{\"deploymentName\": \"example-deployment\", \"namespace\": \"default\", \"labels\": {\"app\": \"example\"}, \"image\": \"nginx\", \"replicas\": 1, \"containerPort\": 80}"
 
+##  Pre-built image
+### Note pre-built image is running on ARM Architecture
+
     ```
+1. Deploy via helm on minikube:
+    ```sh
+    helm upgrade --install kubeit helm-kubeit
+    ```
+
 
 ## License
 
