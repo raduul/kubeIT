@@ -25,7 +25,7 @@ To install kubeIT, follow these steps:
 
 3. Create an image:
     ```sh
-    docker build -t kubeit:2.0.13 .
+    docker build -t kubeit:<tag> .
     ```
 
 4. Deploy on kubernetes:
@@ -54,12 +54,10 @@ To install kubeIT, follow these steps:
 ##  Pre-built image
 ### Note pre-built image is running on ARM Architecture
 
-    ```
 1. Deploy via helm on minikube:
     ```sh
     helm upgrade --install kubeit helm-kubeit
     ```
-
 
 ## License
 
