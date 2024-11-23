@@ -1,5 +1,8 @@
-test:
+test_count:
 	go test -count=80 ./...
 
-test log:
-	go test -v ./...
+test_cover:
+	go test ./... -cover
+
+test:
+	go test ./...

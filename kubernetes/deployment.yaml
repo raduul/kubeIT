@@ -15,5 +15,5 @@ spec:
     spec:
       containers:
       - name: kubeit
-        image: kubeit:2.0.4
-        imagePullPolicy: IfNotPresent
+        image: kubeit:2.0.13
+        imagePullPolicy: Never
