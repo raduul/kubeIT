@@ -11,7 +11,7 @@ The kubeIT approach allows multiple microservices to internally spin up addition
 
 ## Installation
 
-To install kubeIT, follow these steps:
+To install kubeIT locally, follow these steps:
 
 1. Clone the repository:
     ```sh
@@ -23,17 +23,23 @@ To install kubeIT, follow these steps:
     cd kubeIT
     ```
 
-3. Create an image:
+3. Modify client.go BuildConfigFromFlags config path to your path:
+    ```sh
+    config, err = clientcmd.BuildConfigFromFlags("", "/Users/<username>/.kube/config")
+    ```
+
+
+4. Create an image:
     ```sh
     docker build -t kubeit:<tag> .
     ```
 
-4. Deploy on kubernetes:
+5. Deploy on kubernetes:
     ```sh
     kubectl apply -f kubernetes/
     ```
 
-5. Deploy jobs/deployments on kubernetes:
+6. Deploy jobs/deployments on kubernetes:
     ```sh
     curl -X POST http://localhost:7080/createJob \
     -H "Content-Type: application/json" \
@@ -47,10 +53,17 @@ To install kubeIT, follow these steps:
     ```
 
     ```sh
-    curl -v -X POST http://localhost:7080/createDeployment \
+    curl -X POST http://localhost:7080/createDeployment \
     -H "Content-Type: application/json" \
-    -d "{\"deploymentName\": \"example-deployment\", \"namespace\": \"default\", \"labels\": {\"app\": \"example\"}, \"image\": \"nginx\", \"replicas\": 1, \"containerPort\": 80}"
-
+    -d '{
+        "deploymentName": "example-deployment",
+        "namespace": "default",
+        "labels": {"app": "example"},
+        "image": "nginx",
+        "replicas": 2,
+        "containerPort": 80
+    }'
+    ```
 ##  Pre-built image
 ### Note pre-built image is running on ARM Architecture
 

@@ -9,7 +9,7 @@ import (
 func ClientSetup() (*kubernetes.Clientset, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		config, err = clientcmd.BuildConfigFromFlags("", "/Users/radesrdanovic/.kube/config")
+		config, err = clientcmd.BuildConfigFromFlags("", "/Users/<username>/.kube/config")
 		if err != nil {
 			panic(err)
 		}
